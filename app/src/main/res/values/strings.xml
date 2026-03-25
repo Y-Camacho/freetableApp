@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">Freetable</string>
+    <string name="brand_name">Freetable</string>
+    <string name="brand_subtitle">Reserva tu mesa favorita</string>
+    <!-- Auth -->
+    <string name="login">Iniciar sesión</string>
+    <string name="register">Crear cuenta</string>
+    <string name="email">Correo electrónico</string>
+    <string name="password">Contraseña</string>
+    <string name="full_name">Nombre completo</string>
+    <string name="no_account">¿No tienes cuenta? Regístrate</string>
+    <string name="have_account">¿Ya tienes cuenta? Inicia sesión</string>
+    <string name="logout">Cerrar sesión</string>
+    <!-- Home -->
+    <string name="greeting">¡Hola, %1$s!</string>
+    <string name="home_subtitle">¿Dónde quieres comer hoy?</string>
+    <string name="categories">Categorías</string>
+    <string name="popular_restaurants">Restaurantes populares</string>
+    <string name="recommendations">Recomendados para ti</string>
+    <string name="all_restaurants">Todos los restaurantes</string>
+    <!-- Search -->
+    <string name="search_hint">Buscar restaurante…</string>
+    <string name="search_results">Resultados</string>
+    <string name="no_results">Sin resultados</string>
+    <!-- Profile -->
+    <string name="my_profile">Mi perfil</string>
+    <string name="my_reservations">Mis reservas</string>
+    <string name="no_reservations">Aún no tienes reservas</string>
+    <!-- Restaurant Detail -->
+    <string name="make_reservation">Hacer reserva</string>
+    <string name="reviews">Reseñas</string>
+    <string name="no_reviews">Sé el primero en comentar</string>
+    <string name="add_comment">Agregar comentario</string>
+    <string name="send">Enviar</string>
+    <string name="people">personas</string>
+    <string name="person">persona</string>
+    <!-- Reservation -->
+    <string name="reservation_date">Fecha y hora</string>
+    <string name="reservation_people">Número de personas</string>
+    <string name="confirm_reservation">Confirmar reserva</string>
+    <string name="cancel_reservation">Cancelar reserva</string>
+    <string name="status_pending">Pendiente</string>
+    <string name="status_confirmed">Confirmada</string>
+    <string name="status_cancelled">Cancelada</string>
+    <!-- Errors -->
+    <string name="error_network">Error de conexión</string>
+    <string name="error_generic">Ha ocurrido un error</string>
+    <string name="error_invalid_credentials">Credenciales inválidas</string>
+    <!-- Navigation -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_search">Buscar</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="loading">Cargando…</string>
+    <string name="retry">Reintentar</string>
+    <string name="see_all">Ver todos</string>
+    <string name="average_rating">Calificación promedio</string>
+    <string name="write_your_review">Escribe tu reseña…</string>
+    <string name="select_rating">Selecciona calificación</string>
+    <string name="reservation_confirm_cancel">¿Estás seguro que deseas cancelar esta reserva?</string>
+    <string name="yes_cancel">Sí, cancelar</string>
+    <string name="keep_it">Conservarla</string>
+</resources>
