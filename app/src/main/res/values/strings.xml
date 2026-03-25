@@ -33,6 +33,16 @@
     <string name="reviews">Reseñas</string>
     <string name="no_reviews">Sé el primero en comentar</string>
     <string name="add_comment">Agregar comentario</string>
+    <string name="gallery">Galería</string>
+    <string name="menus">Menús</string>
+    <string name="no_menus">Este restaurante aún no tiene menús publicados</string>
+    <string name="rating_summary">%1$.1f (%2$d reseñas)</string>
+    <string name="comment_rating_hint">Calificación (1 a 5, pasos de 0.5)</string>
+    <string name="login_to_comment">Inicia sesión para comentar</string>
+    <string name="invalid_rating">La calificación debe ser entre 1 y 5, en pasos de 0.5</string>
+    <string name="comment_required">Escribe un comentario</string>
+    <string name="comment_sent">Comentario enviado</string>
+    <string name="open_menu_error">No se pudo abrir el menú</string>
     <string name="send">Enviar</string>
     <string name="people">personas</string>
     <string name="person">persona</string>

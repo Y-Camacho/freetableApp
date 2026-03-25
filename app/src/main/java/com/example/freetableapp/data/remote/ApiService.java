@@ -3,6 +3,7 @@ package com.example.freetableapp.data.remote;
 import com.example.freetableapp.data.model.Category;
 import com.example.freetableapp.data.model.Comment;
 import com.example.freetableapp.data.model.Reservation;
+import com.example.freetableapp.data.model.RestaurantMedia;
 import com.example.freetableapp.data.model.Restaurant;
 
 import retrofit2.Call;
@@ -40,6 +41,9 @@ public interface ApiService {
     @GET("restaurants/{restaurant}")
     Call<ApiResponse<Restaurant>> getRestaurant(@Path("restaurant") int restaurantId);
 
+    @GET("restaurants/{restaurant}/media")
+    Call<ApiResponse<RestaurantMedia>> getRestaurantMedia(@Path("restaurant") int restaurantId);
+
     @POST("restaurants/{restaurant}/reservations")
     Call<ApiResponse<Reservation>> createReservation(
             @Path("restaurant") int restaurantId,
@@ -56,6 +60,12 @@ public interface ApiService {
     Call<PaginatedResponse<Comment>> getComments(
             @Path("restaurant") int restaurantId,
             @Query("per_page") Integer perPage
+    );
+
+    @POST("restaurants/{restaurant}/comments")
+    Call<ApiResponse<Comment>> createComment(
+            @Path("restaurant") int restaurantId,
+            @Body CreateCommentRequest request
     );
 }
 

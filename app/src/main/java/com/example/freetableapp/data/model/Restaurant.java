@@ -14,5 +14,8 @@ public class Restaurant {
     public List<Category> categories;
     public RestaurantImage cover_image;
     public List<RestaurantImage> images;
+    public List<RestaurantMenu> menus;
+    public Double average_rating;
+    public Integer ratings_count;
 }
 
