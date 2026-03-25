@@ -26,6 +26,8 @@
     <string name="my_profile">Mi perfil</string>
     <string name="my_reservations">Mis reservas</string>
     <string name="no_reservations">Aún no tienes reservas</string>
+    <string name="guest_mode_title">Estás navegando como invitado</string>
+    <string name="guest_mode_subtitle">Inicia sesión para ver tu perfil y tus reservas</string>
     <!-- Restaurant Detail -->
     <string name="make_reservation">Hacer reserva</string>
     <string name="reviews">Reseñas</string>

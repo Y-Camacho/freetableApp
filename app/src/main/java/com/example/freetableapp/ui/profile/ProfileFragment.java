@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.freetableapp.R;
 import com.example.freetableapp.auth.LoginActivity;
 import com.example.freetableapp.data.model.Reservation;
 import com.example.freetableapp.data.model.User;
@@ -50,9 +51,51 @@ public class ProfileFragment extends Fragment {
         binding.rvReservations.setAdapter(reservationAdapter);
 
         binding.btnLogout.setOnClickListener(v -> doLogout());
+        binding.btnGoToLogin.setOnClickListener(v -> startActivity(new Intent(requireContext(), LoginActivity.class)));
 
-        loadProfile();
-        loadReservations();
+        renderBySessionState();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (binding != null) {
+            renderBySessionState();
+        }
+    }
+
+    private void renderBySessionState() {
+        boolean isLoggedIn = authRepository.sessionManager().isLoggedIn();
+        if (isLoggedIn) {
+            showLoggedInState();
+            loadProfile();
+            loadReservations();
+            return;
+        }
+
+        showGuestState();
+    }
+
+    private void showLoggedInState() {
+        binding.btnGoToLogin.setVisibility(View.GONE);
+        binding.btnLogout.setVisibility(View.VISIBLE);
+        binding.tvReservationsTitle.setVisibility(View.VISIBLE);
+        binding.rvReservations.setVisibility(View.VISIBLE);
+        binding.progressBar.setVisibility(View.GONE);
+    }
+
+    private void showGuestState() {
+        binding.tvUserName.setText(getString(R.string.guest_mode_title));
+        binding.tvUserEmail.setText(getString(R.string.guest_mode_subtitle));
+        binding.tvUserRole.setText("");
+
+        reservationAdapter.submitList(java.util.Collections.emptyList());
+        binding.btnGoToLogin.setVisibility(View.VISIBLE);
+        binding.btnLogout.setVisibility(View.GONE);
+        binding.tvReservationsTitle.setVisibility(View.GONE);
+        binding.rvReservations.setVisibility(View.GONE);
+        binding.progressBar.setVisibility(View.GONE);
+        binding.tvEmptyReservations.setVisibility(View.GONE);
     }
 
     private void loadProfile() {
