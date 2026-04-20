@@ -42,6 +42,24 @@ public class ReservationRepository {
         });
     }
 
+    public void getAvailability(int restaurantId, String date, int people, DataCallback<List<String>> callback) {
+        apiService.getAvailability(restaurantId, date, people).enqueue(new Callback<List<String>>() {
+            @Override
+            public void onResponse(Call<List<String>> call, Response<List<String>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("No se pudo cargar horarios disponibles");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<String>> call, Throwable t) {
+                callback.onError("Error de conexion");
+            }
+        });
+    }
+
     public void getMyReservations(int perPage, DataCallback<List<Reservation>> callback) {
         apiService.getMyReservations(perPage).enqueue(new Callback<PaginatedResponse<Reservation>>() {
             @Override

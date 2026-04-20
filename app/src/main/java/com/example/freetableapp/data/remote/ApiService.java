@@ -6,6 +6,8 @@ import com.example.freetableapp.data.model.Reservation;
 import com.example.freetableapp.data.model.RestaurantMedia;
 import com.example.freetableapp.data.model.Restaurant;
 
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
@@ -48,6 +50,20 @@ public interface ApiService {
     Call<ApiResponse<Reservation>> createReservation(
             @Path("restaurant") int restaurantId,
             @Body CreateReservationRequest request
+    );
+
+    @GET("restaurants/nearby")
+    Call<PaginatedResponse<Restaurant>> getNearbyRestaurants(
+            @Query("lat") double lat,
+            @Query("lng") double lng,
+            @Query("radius") int radius
+    );
+
+    @GET("restaurants/{restaurant}/availability")
+    Call<List<String>> getAvailability(
+            @Path("restaurant") int restaurantId,
+            @Query("date") String date,
+            @Query("people") int people
     );
 
     @GET("reservations/me")

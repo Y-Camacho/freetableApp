@@ -1,11 +1,14 @@
 package com.example.freetableapp.restaurant;
 
 import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Toast;
 
@@ -26,17 +29,22 @@ import com.example.freetableapp.data.repository.DataCallback;
 import com.example.freetableapp.data.repository.ReservationRepository;
 import com.example.freetableapp.data.repository.RestaurantRepository;
 import com.example.freetableapp.databinding.ActivityRestaurantDetailBinding;
+import com.google.android.material.chip.Chip;
 import com.example.freetableapp.ui.common.CommentAdapter;
 import com.example.freetableapp.ui.common.MenuAdapter;
 import com.example.freetableapp.ui.common.RestaurantImageAdapter;
 import com.example.freetableapp.util.UrlResolver;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class RestaurantDetailActivity extends AppCompatActivity {
 
     public static final String EXTRA_RESTAURANT_ID = "extra_restaurant_id";
+    private static final long AVAILABILITY_DEBOUNCE_MS = 500;
 
     private ActivityRestaurantDetailBinding binding;
     private RestaurantRepository restaurantRepository;
@@ -47,7 +55,11 @@ public class RestaurantDetailActivity extends AppCompatActivity {
     private MenuAdapter menuAdapter;
 
     private int restaurantId = -1;
-    private String selectedReservationDateTime;
+    private String selectedReservationDateApi;
+    private String selectedReservationDateAvailability;
+    private String selectedReservationSlot;
+    private final Handler availabilityHandler = new Handler(Looper.getMainLooper());
+    private Runnable pendingAvailabilityReload;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -69,9 +81,24 @@ public class RestaurantDetailActivity extends AppCompatActivity {
         }
 
         setupDefaultDate();
-        binding.btnPickDate.setOnClickListener(v -> pickDateAndTime());
+        binding.btnPickDate.setOnClickListener(v -> pickDate());
         binding.btnReserve.setOnClickListener(v -> createReservation());
         binding.btnSendComment.setOnClickListener(v -> createComment());
+        binding.etPeople.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                clearSlots();
+                scheduleAvailabilityReload(AVAILABILITY_DEBOUNCE_MS);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
 
         loadRestaurant();
         loadGallery();
@@ -102,32 +129,142 @@ public class RestaurantDetailActivity extends AppCompatActivity {
 
     private void setupDefaultDate() {
         Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.HOUR_OF_DAY, 1);
-        selectedReservationDateTime = toApiDateTime(
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE)
-        );
-        binding.tvDate.setText("Fecha seleccionada: " + selectedReservationDateTime);
+        updateSelectedDate(calendar.getTime());
+        clearSlots();
+        scheduleAvailabilityReload(0);
     }
 
-    private void pickDateAndTime() {
+    private void pickDate() {
         Calendar calendar = Calendar.getInstance();
         DatePickerDialog datePicker = new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
-            TimePickerDialog timePicker = new TimePickerDialog(this, (timeView, hourOfDay, minute) -> {
-                selectedReservationDateTime = toApiDateTime(year, month, dayOfMonth, hourOfDay, minute);
-                binding.tvDate.setText("Fecha seleccionada: " + selectedReservationDateTime);
-            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true);
-            timePicker.show();
+            Calendar selected = Calendar.getInstance();
+            selected.set(Calendar.YEAR, year);
+            selected.set(Calendar.MONTH, month);
+            selected.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+            updateSelectedDate(selected.getTime());
+            clearSlots();
+            scheduleAvailabilityReload(0);
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+        datePicker.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
         datePicker.show();
     }
 
-    private String toApiDateTime(int year, int month, int day, int hour, int minute) {
-        int displayMonth = month + 1;
-        return String.format("%04d-%02d-%02d %02d:%02d:00", year, displayMonth, day, hour, minute);
+    private void scheduleAvailabilityReload(long delayMs) {
+        if (pendingAvailabilityReload != null) {
+            availabilityHandler.removeCallbacks(pendingAvailabilityReload);
+        }
+
+        pendingAvailabilityReload = () -> loadAvailabilitySlots(false);
+        availabilityHandler.postDelayed(pendingAvailabilityReload, delayMs);
+    }
+
+    private void updateSelectedDate(Date date) {
+        selectedReservationDateApi = formatDate(date, "yyyy-MM-dd");
+        selectedReservationDateAvailability = formatDate(date, "dd-MM-yyyy");
+        binding.tvDate.setText(getString(R.string.selected_date, selectedReservationDateAvailability));
+    }
+
+    private String formatDate(Date date, String pattern) {
+        SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.getDefault());
+        return sdf.format(date);
+    }
+
+    private void loadAvailabilitySlots(boolean showValidationError) {
+        Integer people = parsePeople(showValidationError);
+        if (people == null) {
+            return;
+        }
+
+        setLoading(true);
+        reservationRepository.getAvailability(restaurantId, selectedReservationDateAvailability, people, new DataCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> data) {
+                setLoading(false);
+                bindAvailabilitySlots(data);
+            }
+
+            @Override
+            public void onError(String message) {
+                setLoading(false);
+                clearSlots();
+                Toast.makeText(RestaurantDetailActivity.this, message, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void bindAvailabilitySlots(List<String> slots) {
+        binding.chipGroupSlots.removeAllViews();
+        selectedReservationSlot = null;
+        updateSelectedSlotText();
+
+        if (slots == null || slots.isEmpty()) {
+            binding.tvEmptySlots.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        binding.tvEmptySlots.setVisibility(View.GONE);
+        for (String slot : slots) {
+            Chip chip = new Chip(this);
+            chip.setText(slot);
+            chip.setCheckable(true);
+            chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (isChecked) {
+                    selectedReservationSlot = slot;
+                } else if (slot.equals(selectedReservationSlot)) {
+                    selectedReservationSlot = null;
+                }
+                updateSelectedSlotText();
+            });
+            binding.chipGroupSlots.addView(chip);
+        }
+    }
+
+    private void clearSlots() {
+        binding.chipGroupSlots.removeAllViews();
+        binding.tvEmptySlots.setVisibility(View.GONE);
+        selectedReservationSlot = null;
+        updateSelectedSlotText();
+    }
+
+    private void updateSelectedSlotText() {
+        if (TextUtils.isEmpty(selectedReservationSlot)) {
+            binding.tvSelectedSlot.setText(getString(R.string.slot_not_selected));
+            return;
+        }
+        binding.tvSelectedSlot.setText(getString(R.string.selected_slot, selectedReservationSlot));
+    }
+
+    private Integer parsePeople() {
+        return parsePeople(true);
+    }
+
+    private Integer parsePeople(boolean showValidationError) {
+        String peopleText = String.valueOf(binding.etPeople.getText()).trim();
+        if (peopleText.isEmpty()) {
+            if (showValidationError) {
+                Toast.makeText(this, "Ingresa numero de personas", Toast.LENGTH_SHORT).show();
+            }
+            return null;
+        }
+
+        int people;
+        try {
+            people = Integer.parseInt(peopleText);
+        } catch (NumberFormatException e) {
+            if (showValidationError) {
+                Toast.makeText(this, "Numero invalido", Toast.LENGTH_SHORT).show();
+            }
+            return null;
+        }
+
+        if (people < 1 || people > 30) {
+            if (showValidationError) {
+                Toast.makeText(this, "El numero de personas debe estar entre 1 y 30", Toast.LENGTH_SHORT).show();
+            }
+            return null;
+        }
+
+        return people;
     }
 
     private void loadRestaurant() {
@@ -272,27 +409,20 @@ public class RestaurantDetailActivity extends AppCompatActivity {
             return;
         }
 
-        String peopleText = String.valueOf(binding.etPeople.getText()).trim();
-        if (peopleText.isEmpty()) {
-            Toast.makeText(this, "Ingresa numero de personas", Toast.LENGTH_SHORT).show();
+        Integer people = parsePeople();
+        if (people == null) {
             return;
         }
 
-        int people;
-        try {
-            people = Integer.parseInt(peopleText);
-        } catch (NumberFormatException e) {
-            Toast.makeText(this, "Numero invalido", Toast.LENGTH_SHORT).show();
+        if (TextUtils.isEmpty(selectedReservationSlot)) {
+            Toast.makeText(this, getString(R.string.slot_not_selected), Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (people < 1 || people > 30) {
-            Toast.makeText(this, "El numero de personas debe estar entre 1 y 30", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        String reservationDateTime = selectedReservationDateApi + " " + selectedReservationSlot + ":00";
 
         setLoading(true);
-        reservationRepository.createReservation(restaurantId, selectedReservationDateTime, people, new DataCallback<Reservation>() {
+        reservationRepository.createReservation(restaurantId, reservationDateTime, people, new DataCallback<Reservation>() {
             @Override
             public void onSuccess(Reservation data) {
                 setLoading(false);
@@ -378,6 +508,14 @@ public class RestaurantDetailActivity extends AppCompatActivity {
         binding.progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
         binding.btnReserve.setEnabled(!loading);
         binding.btnPickDate.setEnabled(!loading);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (pendingAvailabilityReload != null) {
+            availabilityHandler.removeCallbacks(pendingAvailabilityReload);
+        }
     }
 }
 

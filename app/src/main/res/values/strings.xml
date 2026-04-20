@@ -22,6 +22,14 @@
     <string name="search_hint">Buscar restaurante…</string>
     <string name="search_results">Resultados</string>
     <string name="no_results">Sin resultados</string>
+    <string name="nearby_label">Cerca de mí</string>
+    <string name="radius_2km">2 km</string>
+    <string name="radius_4km">4 km</string>
+    <string name="radius_6km">6 km</string>
+    <string name="radius_9km">9 km</string>
+    <string name="radius_10km">10 km</string>
+    <string name="location_permission_denied">Permiso de ubicación denegado. No se puede buscar por cercanía.</string>
+    <string name="location_unavailable">No se pudo obtener la ubicación. Inténtalo de nuevo.</string>
     <!-- Profile -->
     <string name="my_profile">Mi perfil</string>
     <string name="my_reservations">Mis reservas</string>
@@ -48,6 +56,13 @@
     <string name="person">persona</string>
     <!-- Reservation -->
     <string name="reservation_date">Fecha y hora</string>
+    <string name="select_date">Seleccionar fecha</string>
+    <string name="selected_date">Fecha seleccionada: %1$s</string>
+    <string name="load_available_slots">Ver horarios disponibles</string>
+    <string name="available_slots">Horarios disponibles</string>
+    <string name="no_slots_available">No hay horarios disponibles para esta fecha y cantidad</string>
+    <string name="selected_slot">Horario seleccionado: %1$s</string>
+    <string name="slot_not_selected">Selecciona un horario para reservar</string>
     <string name="reservation_people">Número de personas</string>
     <string name="confirm_reservation">Confirmar reserva</string>
     <string name="cancel_reservation">Cancelar reserva</string>

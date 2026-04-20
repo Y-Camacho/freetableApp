@@ -149,6 +149,24 @@ public class RestaurantRepository {
         });
     }
 
+    public void getNearbyRestaurants(double lat, double lng, int radius, DataCallback<List<Restaurant>> callback) {
+        apiService.getNearbyRestaurants(lat, lng, radius).enqueue(new Callback<PaginatedResponse<Restaurant>>() {
+            @Override
+            public void onResponse(Call<PaginatedResponse<Restaurant>> call, Response<PaginatedResponse<Restaurant>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().data != null) {
+                    callback.onSuccess(response.body().data);
+                } else {
+                    callback.onSuccess(Collections.emptyList());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<PaginatedResponse<Restaurant>> call, Throwable t) {
+                callback.onError("Error de conexion");
+            }
+        });
+    }
+
     private double computeAverageRating(List<Comment> comments) {
         if (comments == null || comments.isEmpty()) {
             return 0;
