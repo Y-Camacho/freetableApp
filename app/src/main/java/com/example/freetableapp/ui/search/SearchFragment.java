@@ -34,11 +34,20 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 
+import org.osmdroid.config.Configuration;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
+
+import androidx.core.content.res.ResourcesCompat;
+import android.graphics.drawable.Drawable;
+
 import java.util.List;
 
 public class SearchFragment extends Fragment {
 
     private static final int[] RADIUS_VALUES = {2, 4, 6, 9, 10};
+    private static final int MAX_MAP_MARKERS = 60;
 
     private FragmentSearchBinding binding;
     private RestaurantRepository restaurantRepository;
@@ -48,6 +57,8 @@ public class SearchFragment extends Fragment {
 
     private FusedLocationProviderClient fusedLocationClient;
     private int pendingRadius = -1;
+    private int activeNearbyRadius = -1;
+    private boolean nearbyModeActive = false;
 
     private final ActivityResultLauncher<String[]> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
@@ -60,6 +71,7 @@ public class SearchFragment extends Fragment {
                     }
                 } else {
                     uncheckAllRadiusChips();
+                    hideNearbyMap();
                     Toast.makeText(requireContext(), getString(R.string.location_permission_denied), Toast.LENGTH_LONG).show();
                 }
             });
@@ -77,6 +89,7 @@ public class SearchFragment extends Fragment {
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
         restaurantRepository = new RestaurantRepository(requireContext());
+        setupMap();
 
         adapter = new RestaurantAdapter(restaurant -> {
             Intent intent = new Intent(requireContext(), RestaurantDetailActivity.class);
@@ -97,6 +110,7 @@ public class SearchFragment extends Fragment {
         binding.etSearch.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 uncheckAllRadiusChips();
+                hideNearbyMap();
                 performSearch();
                 return true;
             }
@@ -110,6 +124,7 @@ public class SearchFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 uncheckAllRadiusChips();
+                hideNearbyMap();
                 if (searchRunnable != null) {
                     handler.removeCallbacks(searchRunnable);
                 }
@@ -155,6 +170,8 @@ public class SearchFragment extends Fragment {
 
     @SuppressWarnings("MissingPermission")
     private void searchNearby(int radius) {
+        nearbyModeActive = true;
+        activeNearbyRadius = radius;
         binding.progressBar.setVisibility(View.VISIBLE);
 
         fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
@@ -164,6 +181,7 @@ public class SearchFragment extends Fragment {
                     if (location == null) {
                         binding.progressBar.setVisibility(View.GONE);
                         uncheckAllRadiusChips();
+                        hideNearbyMap();
                         Toast.makeText(requireContext(), getString(R.string.location_unavailable), Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -174,6 +192,7 @@ public class SearchFragment extends Fragment {
                     if (!isAdded() || binding == null) return;
                     binding.progressBar.setVisibility(View.GONE);
                     uncheckAllRadiusChips();
+                    hideNearbyMap();
                     Toast.makeText(requireContext(), getString(R.string.location_unavailable), Toast.LENGTH_SHORT).show();
                 });
     }
@@ -189,6 +208,8 @@ public class SearchFragment extends Fragment {
                         if (!isAdded() || binding == null) return;
                         binding.progressBar.setVisibility(View.GONE);
                         adapter.submitList(data);
+                        showNearbyMap();
+                        renderNearbyMap(location, data);
                         binding.tvEmpty.setVisibility(data.isEmpty() ? View.VISIBLE : View.GONE);
                     }
 
@@ -196,6 +217,7 @@ public class SearchFragment extends Fragment {
                     public void onError(String message) {
                         if (!isAdded() || binding == null) return;
                         binding.progressBar.setVisibility(View.GONE);
+                        hideNearbyMap();
                         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -204,10 +226,15 @@ public class SearchFragment extends Fragment {
     private void uncheckAllRadiusChips() {
         binding.chipGroupRadius.clearCheck();
         pendingRadius = -1;
+        activeNearbyRadius = -1;
+        nearbyModeActive = false;
     }
 
     private void performSearch() {
         if (binding == null) return;
+        activeNearbyRadius = -1;
+        nearbyModeActive = false;
+        hideNearbyMap();
         String query = String.valueOf(binding.etSearch.getText()).trim();
         binding.progressBar.setVisibility(View.VISIBLE);
 
@@ -229,11 +256,118 @@ public class SearchFragment extends Fragment {
         });
     }
 
+    private void setupMap() {
+        Configuration.getInstance().setUserAgentValue(requireContext().getPackageName());
+        MapView mapView = binding.mapSearch;
+        mapView.setTileSource(org.osmdroid.tileprovider.tilesource.TileSourceFactory.MAPNIK);
+        mapView.setMultiTouchControls(true);
+        mapView.getController().setZoom(13.0);
+    }
+
+    private void showNearbyMap() {
+        if (binding == null || !nearbyModeActive) {
+            return;
+        }
+        binding.mapSearch.setVisibility(View.VISIBLE);
+    }
+
+    private void hideNearbyMap() {
+        if (binding == null) {
+            return;
+        }
+        binding.mapSearch.getOverlays().clear();
+        binding.mapSearch.setVisibility(View.GONE);
+        binding.mapSearch.invalidate();
+    }
+
+    private void renderNearbyMap(Location userLocation, List<Restaurant> restaurants) {
+        if (binding == null || !nearbyModeActive) {
+            return;
+        }
+
+        MapView mapView = binding.mapSearch;
+        mapView.getOverlays().clear();
+
+        GeoPoint userPoint = new GeoPoint(userLocation.getLatitude(), userLocation.getLongitude());
+
+        Drawable userIcon = ResourcesCompat.getDrawable(getResources(), R.drawable.ic_marker_user, null);
+        Drawable restaurantIcon = ResourcesCompat.getDrawable(getResources(), R.drawable.ic_marker_restaurant, null);
+
+        Marker userMarker = new Marker(mapView);
+        userMarker.setPosition(userPoint);
+        userMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        userMarker.setTitle(getString(R.string.map_you_are_here));
+        if (userIcon != null) userMarker.setIcon(userIcon);
+        mapView.getOverlays().add(userMarker);
+
+        int renderedMarkers = 0;
+        for (Restaurant restaurant : restaurants) {
+            if (renderedMarkers >= MAX_MAP_MARKERS) {
+                break;
+            }
+            if (restaurant == null || restaurant.latitude == null || restaurant.longitude == null) {
+                continue;
+            }
+
+            GeoPoint restaurantPoint = new GeoPoint(restaurant.latitude, restaurant.longitude);
+
+            Marker marker = new Marker(mapView);
+            marker.setPosition(restaurantPoint);
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+            marker.setTitle(restaurant.name);
+            marker.setSnippet(restaurant.address == null ? "" : restaurant.address);
+            if (restaurantIcon != null) marker.setIcon(restaurantIcon);
+            mapView.getOverlays().add(marker);
+            renderedMarkers++;
+        }
+
+        mapView.getController().setCenter(userPoint);
+        mapView.getController().setZoom(getZoomForRadius(activeNearbyRadius));
+
+        mapView.invalidate();
+    }
+
+    private double getZoomForRadius(int radiusKm) {
+        switch (radiusKm) {
+            case 2:
+                return 14.5;
+            case 4:
+                return 13.5;
+            case 6:
+                return 13.0;
+            case 9:
+                return 12.5;
+            case 10:
+                return 12.3;
+            default:
+                return 13.0;
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (binding != null) {
+            binding.mapSearch.onResume();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        if (binding != null) {
+            binding.mapSearch.onPause();
+        }
+        super.onPause();
+    }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         if (searchRunnable != null) {
             handler.removeCallbacks(searchRunnable);
+        }
+        if (binding != null) {
+            binding.mapSearch.onDetach();
         }
         binding = null;
     }

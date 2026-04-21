@@ -1,5 +1,7 @@
 package com.example.freetableapp.data.model;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.List;
 
 public class Restaurant {
@@ -17,5 +19,9 @@ public class Restaurant {
     public List<RestaurantMenu> menus;
     public Double average_rating;
     public Integer ratings_count;
+    @SerializedName(value = "latitude", alternate = {"lat"})
+    public Double latitude;
+    @SerializedName(value = "longitude", alternate = {"lng", "lon"})
+    public Double longitude;
 }
 

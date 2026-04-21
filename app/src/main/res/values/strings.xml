@@ -30,6 +30,7 @@
     <string name="radius_10km">10 km</string>
     <string name="location_permission_denied">Permiso de ubicación denegado. No se puede buscar por cercanía.</string>
     <string name="location_unavailable">No se pudo obtener la ubicación. Inténtalo de nuevo.</string>
+    <string name="map_you_are_here">Tu ubicacion</string>
     <!-- Profile -->
     <string name="my_profile">Mi perfil</string>
     <string name="my_reservations">Mis reservas</string>

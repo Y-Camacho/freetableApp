@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.glide)
     implementation(libs.play.services.location)
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
