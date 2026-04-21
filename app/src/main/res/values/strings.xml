@@ -31,6 +31,9 @@
     <string name="location_permission_denied">Permiso de ubicación denegado. No se puede buscar por cercanía.</string>
     <string name="location_unavailable">No se pudo obtener la ubicación. Inténtalo de nuevo.</string>
     <string name="map_you_are_here">Tu ubicacion</string>
+    <string name="navigate_to">Cómo llegar</string>
+    <string name="navigation_not_available">No se pudo abrir Google Maps</string>
+    <string name="no_coordinates">Este restaurante no tiene ubicación disponible</string>
     <!-- Profile -->
     <string name="my_profile">Mi perfil</string>
     <string name="my_reservations">Mis reservas</string>

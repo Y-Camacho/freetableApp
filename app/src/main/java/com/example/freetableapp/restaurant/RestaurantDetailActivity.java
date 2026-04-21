@@ -55,6 +55,8 @@ public class RestaurantDetailActivity extends AppCompatActivity {
     private MenuAdapter menuAdapter;
 
     private int restaurantId = -1;
+    private Double restaurantLat;
+    private Double restaurantLng;
     private String selectedReservationDateApi;
     private String selectedReservationDateAvailability;
     private String selectedReservationSlot;
@@ -84,6 +86,7 @@ public class RestaurantDetailActivity extends AppCompatActivity {
         binding.btnPickDate.setOnClickListener(v -> pickDate());
         binding.btnReserve.setOnClickListener(v -> createReservation());
         binding.btnSendComment.setOnClickListener(v -> createComment());
+        binding.btnNavigate.setOnClickListener(v -> navigateToRestaurant());
         binding.etPeople.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -289,6 +292,13 @@ public class RestaurantDetailActivity extends AppCompatActivity {
         binding.tvName.setText(restaurant.name);
         binding.tvAddress.setText(restaurant.address);
         binding.tvDescription.setText(TextUtils.isEmpty(restaurant.description) ? "Sin descripcion" : restaurant.description);
+
+        restaurantLat = restaurant.latitude;
+        restaurantLng = restaurant.longitude;
+        boolean canNavigate = (restaurantLat != null && restaurantLng != null)
+                || !TextUtils.isEmpty(restaurant.address);
+        binding.btnNavigate.setVisibility(canNavigate ? View.VISIBLE : View.GONE);
+
         updateRatingSummary(
                 restaurant.average_rating != null ? restaurant.average_rating : 0,
                 restaurant.ratings_count != null ? restaurant.ratings_count : 0
@@ -399,6 +409,35 @@ public class RestaurantDetailActivity extends AppCompatActivity {
             startActivity(intent);
         } catch (Exception e) {
             Toast.makeText(this, getString(R.string.open_menu_error), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void navigateToRestaurant() {
+        Uri gmmUri;
+        Uri webUri;
+
+        if (restaurantLat != null && restaurantLng != null) {
+            gmmUri = Uri.parse("google.navigation:q=" + restaurantLat + "," + restaurantLng + "&mode=d");
+            webUri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination="
+                    + restaurantLat + "," + restaurantLng + "&travelmode=driving");
+        } else {
+            String address = String.valueOf(binding.tvAddress.getText()).trim();
+            if (TextUtils.isEmpty(address)) {
+                Toast.makeText(this, getString(R.string.no_coordinates), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String encodedAddress = Uri.encode(address);
+            gmmUri = Uri.parse("google.navigation:q=" + encodedAddress + "&mode=d");
+            webUri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination="
+                    + encodedAddress + "&travelmode=driving");
+        }
+
+        Intent intent = new Intent(Intent.ACTION_VIEW, gmmUri);
+        intent.setPackage("com.google.android.apps.maps");
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        } else {
+            startActivity(new Intent(Intent.ACTION_VIEW, webUri));
         }
     }
 

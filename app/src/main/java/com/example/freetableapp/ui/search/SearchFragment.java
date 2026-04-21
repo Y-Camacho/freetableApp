@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -38,9 +39,11 @@ import org.osmdroid.config.Configuration;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
+import org.osmdroid.views.overlay.infowindow.InfoWindow;
 
 import androidx.core.content.res.ResourcesCompat;
 import android.graphics.drawable.Drawable;
+import android.widget.TextView;
 
 import java.util.List;
 
@@ -317,6 +320,7 @@ public class SearchFragment extends Fragment {
             marker.setTitle(restaurant.name);
             marker.setSnippet(restaurant.address == null ? "" : restaurant.address);
             if (restaurantIcon != null) marker.setIcon(restaurantIcon);
+            marker.setInfoWindow(new RestaurantInfoWindow(mapView));
             mapView.getOverlays().add(marker);
             renderedMarkers++;
         }
@@ -371,5 +375,47 @@ public class SearchFragment extends Fragment {
         }
         binding = null;
     }
-}
 
+    private void openNavigation(double lat, double lng, String label) {
+        Uri gmmUri = Uri.parse("google.navigation:q=" + lat + "," + lng + "&mode=d");
+        Intent intent = new Intent(Intent.ACTION_VIEW, gmmUri);
+        intent.setPackage("com.google.android.apps.maps");
+        if (intent.resolveActivity(requireActivity().getPackageManager()) != null) {
+            startActivity(intent);
+        } else {
+            Uri webUri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination="
+                    + lat + "," + lng + "&travelmode=driving");
+            startActivity(new Intent(Intent.ACTION_VIEW, webUri));
+        }
+    }
+
+    // ── Custom InfoWindow ────────────────────────────────────────────────────
+
+    private class RestaurantInfoWindow extends InfoWindow {
+
+        RestaurantInfoWindow(MapView map) {
+            super(R.layout.map_bubble, map);
+        }
+
+        @Override
+        public void onOpen(Object item) {
+            Marker marker = (Marker) item;
+            TextView tvTitle = mView.findViewById(R.id.bubble_title);
+            TextView tvDesc  = mView.findViewById(R.id.bubble_description);
+            com.google.android.material.button.MaterialButton btnNavigate =
+                    mView.findViewById(R.id.btnNavigate);
+
+            tvTitle.setText(marker.getTitle());
+            tvDesc.setText(marker.getSnippet() != null ? marker.getSnippet() : "");
+
+            GeoPoint pos = marker.getPosition();
+            btnNavigate.setOnClickListener(v -> {
+                openNavigation(pos.getLatitude(), pos.getLongitude(), marker.getTitle());
+                close();
+            });
+        }
+
+        @Override
+        public void onClose() { }
+    }
+}

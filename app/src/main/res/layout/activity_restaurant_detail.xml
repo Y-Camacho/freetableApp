@@ -53,13 +53,25 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNavigate"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/navigate_to"
+            android:visibility="gone"
+            app:icon="@android:drawable/ic_dialog_map"
+            app:layout_constraintTop_toBottomOf="@id/tvAddress"
+            app:layout_constraintStart_toStartOf="parent" />
+
         <TextView
             android:id="@+id/tvDescription"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:textColor="@color/colorTextSecondary"
-            app:layout_constraintTop_toBottomOf="@id/tvAddress"
+            app:layout_constraintTop_toBottomOf="@id/btnNavigate"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 

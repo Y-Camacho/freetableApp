@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@android:color/white"
+    android:padding="12dp"
+    android:elevation="6dp"
+    android:minWidth="180dp"
+    android:maxWidth="260dp">
+
+    <TextView
+        android:id="@+id/bubble_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:textColor="#212121"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/bubble_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textSize="12sp"
+        android:textColor="#757575"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnNavigate"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/navigate_to"
+        android:textSize="12sp" />
+
+</LinearLayout>
+
